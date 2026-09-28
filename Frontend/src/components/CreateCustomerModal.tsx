@@ -4,16 +4,15 @@ import { CrmApi } from '../services/api';
 import { X, Sparkles, User, Mail, Building, Phone, Star } from 'lucide-react';
 
 interface CreateCustomerModalProps {
-  isOpen: boolean;
   onClose: () => void;
   onCreated: () => void;
 }
 
-export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({ isOpen, onClose, onCreated }) => {
-  if (!isOpen) return null;
+type FormState = { error?: string } | null;
 
+export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({ onClose, onCreated }) => {
   const [state, formAction, isPending] = useActionState(
-    async (_prevState: any, formData: FormData) => {
+    async (_prevState: FormState, formData: FormData): Promise<FormState> => {
       const fullName = formData.get('fullName') as string;
       const email = formData.get('email') as string;
       const company = formData.get('company') as string;
@@ -24,9 +23,9 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({ isOpen
         await CrmApi.createCustomer({ fullName, email, company, phone, tier });
         onCreated();
         onClose();
-        return { success: true };
-      } catch (err: any) {
-        return { error: err.message || 'Error al ejecutar CreateCustomerCommand' };
+        return null;
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : 'Error al ejecutar CreateCustomerCommand' };
       }
     },
     null
@@ -37,6 +36,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({ isOpen
       <div className="glass-panel w-full max-w-md p-6 border border-[#D4AF37]/40 shadow-2xl relative bg-[#0F1420]">
         <button
           onClick={onClose}
+          aria-label="Cerrar"
           className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
         >
           <X className="w-5 h-5" />

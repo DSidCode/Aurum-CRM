@@ -10,6 +10,7 @@
 - Patrón **CQRS (Command Query Responsibility Segregation)** orquestado mediante **MediatR**.
 - **React 19** en frontend (TypeScript + Vite), aprovechando `useOptimistic` para actualizaciones instantáneas de UI en 0ms y `useActionState` con Actions.
 - **Auditor CQRS en vivo:** Panel de observabilidad integrado en la interfaz web para monitorear cada comando y consulta en tiempo real.
+- **Reglas de negocio en el Dominio** (una oportunidad no puede retroceder ni cambiar tras cerrarse) cubiertas por **22 tests xUnit**, y errores de la API en formato estándar **RFC 7807 (ProblemDetails)**.
 
 ---
 
@@ -23,6 +24,7 @@ Aurum-CRM/
 │       ├── Aurum.Domain/                 # Capa de Dominio (Entidades ricas, Value Objects, Enums)
 │       │   ├── Entities/                 # Customer.cs, Deal.cs (Invariantes de negocio, private set)
 │       │   ├── Enums/                    # DealStage.cs, CustomerTier.cs
+│       │   ├── Exceptions/               # DomainException (violación de regla de negocio)
 │       │   └── ValueObjects/             # Money.cs
 │       ├── Aurum.Application/            # Capa de Aplicación (Casos de uso & CQRS)
 │       │   ├── Common/Interfaces/        # ICustomerRepository, IDealRepository, IUnitOfWork
@@ -37,13 +39,17 @@ Aurum-CRM/
 │       │   └── Repositories/             # CustomerRepository, DealRepository, UnitOfWork
 │       └── Aurum.Api/                    # Punto de entrada Web API REST
 │           ├── Controllers/              # CustomersController, DealsController, DashboardController
+│           ├── Infrastructure/           # DomainExceptionHandler → ProblemDetails (400/404)
 │           └── Program.cs                # Inyección de dependencias, CORS, Swagger
+│   └── tests/
+│       ├── Aurum.Domain.Tests/           # Reglas de negocio de Deal, Customer y Money (sin mocks)
+│       └── Aurum.Application.Tests/      # Handlers CQRS con repositorios en memoria
 │
 ├── Frontend/                             # SPA React 19 + TypeScript + Vite
 │   ├── src/
 │   │   ├── components/                   # Navbar, KpiMetrics, PipelineBoard, CustomersList,
-│   │   │                                 # CreateCustomerModal, CqrsInspector, DefenseGuideView
-│   │   ├── services/                     # api.ts (Cliente HTTP + CQRS event emitter)
+│   │   │                                 # CreateCustomerModal, CqrsInspector
+│   │   ├── services/                     # api.ts (Cliente HTTP + modo demo + CQRS event emitter)
 │   │   ├── types/                        # crm.ts (Contratos tipados TypeScript)
 │   │   ├── App.tsx                       # Orquestación de vistas y estado reactivo
 │   │   └── index.css                     # Sistema de diseño Aurum Luxury (Deep Navy + Gold)
@@ -62,6 +68,12 @@ dotnet run --project src/Aurum.Api
 ```
 * La API se iniciará en `http://localhost:5000` con Swagger UI interactivo en `http://localhost:5000/`.
 
+Para ejecutar los tests:
+```bash
+cd Backend
+dotnet test AurumCRM.slnx
+```
+
 ### 2. Frontend (React 19)
 ```bash
 cd Frontend
@@ -69,4 +81,4 @@ npm install
 npm run dev
 ```
 * Abre `http://localhost:5173` en tu navegador.
-* **Modo Autónomo:** Si el backend no está corriendo, el frontend activa automáticamente su motor CQRS en memoria, permitiendo interactuar con el pipeline, crear clientes y visualizar los eventos de CQRS en vivo sin configuración previa.
+* **Modo demo:** la URL de la API se configura con la variable `VITE_API_URL` (en desarrollo ya apunta a `http://localhost:5000/api` vía `.env.development`). Si no está definida o la API no responde, el frontend simula los Commands y Queries en el navegador con las mismas reglas de negocio, y lo indica con la etiqueta **"Modo demo · sin servidor"**; en el Auditor CQRS cada evento aparece marcado como *API .NET* o *Simulado*. Así la demo pública funciona como sitio estático sin backend.

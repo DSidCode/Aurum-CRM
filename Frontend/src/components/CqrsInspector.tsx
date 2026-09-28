@@ -24,6 +24,7 @@ export const CqrsInspector: React.FC<CqrsInspectorProps> = ({ logs, onClear }) =
             </h2>
             <p className="text-xs text-slate-400">
               Inspecciona en tiempo real los Commands (Escritura/Mutación) y Queries (Lectura) que procesa MediatR.
+              Los marcados como <em>Simulado</em> se ejecutan en el navegador porque no hay servidor conectado.
             </p>
           </div>
         </div>
@@ -69,6 +70,15 @@ export const CqrsInspector: React.FC<CqrsInspectorProps> = ({ logs, onClear }) =
                     )}
                   </span>
                   <span className="font-mono font-bold text-white text-xs">{log.name}</span>
+                  <span
+                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                      log.source === 'api'
+                        ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-white/5 text-slate-400 border border-white/10'
+                    }`}
+                  >
+                    {log.source === 'api' ? 'API .NET' : 'Simulado'}
+                  </span>
                 </div>
                 <span className="text-[11px] font-mono text-slate-400">{log.timestamp} · {log.durationMs}ms</span>
               </div>

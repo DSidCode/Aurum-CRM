@@ -1,7 +1,7 @@
-import React, { useOptimistic, useTransition } from 'react';
+import React, { useOptimistic, useState, useTransition } from 'react';
 import type { Deal, DealStage } from '../types/crm';
 import { CrmApi, STAGE_LABELS } from '../services/api';
-import { ArrowRight, Building, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Building, CheckCircle2 } from 'lucide-react';
 
 interface PipelineBoardProps {
   deals: Deal[];
@@ -18,6 +18,7 @@ const STAGES: { id: DealStage; title: string; color: string }[] = [
 
 export const PipelineBoard: React.FC<PipelineBoardProps> = ({ deals, onDealsUpdated }) => {
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const [optimisticDeals, setOptimisticDeals] = useOptimistic(
     deals,
@@ -29,9 +30,15 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({ deals, onDealsUpda
     if (currentStage >= 5) return;
     const nextStage = (currentStage + 1) as DealStage;
 
+    setError(null);
     startTransition(async () => {
       setOptimisticDeals({ dealId, nextStage });
-      await CrmApi.updateDealStage(dealId, nextStage);
+      try {
+        await CrmApi.updateDealStage(dealId, nextStage);
+      } catch (err) {
+        // Al terminar la transición sin cambios, useOptimistic revierte la tarjeta sola
+        setError(err instanceof Error ? err.message : 'No se pudo actualizar la oportunidad.');
+      }
       onDealsUpdated();
     });
   };
@@ -51,6 +58,13 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({ deals, onDealsUpda
           </p>
         </div>
       </div>
+
+      {error && (
+        <div role="alert" className="mb-4 flex items-center gap-2 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-xl px-3 py-2">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {STAGES.map(stage => {

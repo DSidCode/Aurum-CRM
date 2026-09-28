@@ -1,6 +1,8 @@
 import type { Customer, Deal, DashboardMetrics, CqrsEventLog, DealStage, CustomerTier } from '../types/crm';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// URL de la API .NET. Si no se define (p. ej. en la demo pública), la app
+// funciona entera en el navegador con datos de ejemplo ("modo demo").
+const API_BASE_URL: string | undefined = import.meta.env.VITE_API_URL || undefined;
 
 let mockCustomers: Customer[] = [
   {
@@ -109,7 +111,9 @@ let mockDeals: Deal[] = [
   }
 ];
 
-export type EventCallback = (event: CqrsEventLog) => void;
+export type DataSource = 'api' | 'demo';
+
+type EventCallback = (event: CqrsEventLog) => void;
 const listeners: EventCallback[] = [];
 
 export function subscribeToCqrsLogs(cb: EventCallback) {
@@ -120,14 +124,57 @@ export function subscribeToCqrsLogs(cb: EventCallback) {
   };
 }
 
-function emitCqrs(event: Omit<CqrsEventLog, 'id' | 'timestamp'>) {
+type SourceCallback = (source: DataSource) => void;
+const sourceListeners: SourceCallback[] = [];
+
+export function subscribeToDataSource(cb: SourceCallback) {
+  sourceListeners.push(cb);
+  return () => {
+    const idx = sourceListeners.indexOf(cb);
+    if (idx !== -1) sourceListeners.splice(idx, 1);
+  };
+}
+
+function emitCqrs(event: Omit<CqrsEventLog, 'id' | 'timestamp' | 'layer'>) {
   const fullEvent: CqrsEventLog = {
     ...event,
+    layer: event.source === 'api' ? 'Aurum.Application (.NET)' : 'Navegador · simulación demo',
     id: 'evt-' + Math.random().toString(36).substring(2, 9),
     timestamp: new Date().toLocaleTimeString()
   };
+  sourceListeners.forEach(l => l(event.source));
   listeners.forEach(l => l(fullEvent));
 }
+
+// Error de negocio devuelto por la API (ProblemDetails, RFC 7807).
+export class ApiError extends Error {}
+
+const OFFLINE = Symbol('offline');
+
+// Devuelve OFFLINE solo si no hay API configurada o no responde; si la API
+// responde con un error, lo propaga para no "inventar" un éxito en el cliente.
+async function request<T>(path: string, init?: RequestInit, timeoutMs = 1500): Promise<T | typeof OFFLINE> {
+  if (!API_BASE_URL) return OFFLINE;
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      signal: AbortSignal.timeout(timeoutMs)
+    });
+  } catch {
+    return OFFLINE;
+  }
+
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new ApiError(problem?.detail ?? problem?.message ?? problem?.title ?? `Error ${res.status} de la API`);
+  }
+  return res.json() as Promise<T>;
+}
+
+const elapsed = (start: number) => Math.round(performance.now() - start);
 
 export const STAGE_LABELS: Record<DealStage, string> = {
   1: 'Lead',
@@ -141,22 +188,19 @@ export const STAGE_LABELS: Record<DealStage, string> = {
 export const CrmApi = {
   async getDashboardMetrics(): Promise<DashboardMetrics> {
     const start = performance.now();
-    try {
-      const res = await fetch(`${API_BASE_URL}/dashboard/metrics`, { signal: AbortSignal.timeout(1000) });
-      if (res.ok) {
-        const data = await res.json();
-        emitCqrs({
-          type: 'QUERY',
-          name: 'GetDashboardMetricsQuery',
-          handler: 'GetDashboardMetricsQueryHandler',
-          layer: 'Aurum.Application',
-          payload: {},
-          result: data,
-          durationMs: Math.round(performance.now() - start)
-        });
-        return data;
-      }
-    } catch { }
+    const apiData = await request<DashboardMetrics>('/dashboard/metrics');
+    if (apiData !== OFFLINE) {
+      emitCqrs({
+        type: 'QUERY',
+        source: 'api',
+        name: 'GetDashboardMetricsQuery',
+        handler: 'GetDashboardMetricsQueryHandler',
+        payload: {},
+        result: apiData,
+        durationMs: elapsed(start)
+      });
+      return apiData;
+    }
 
     const active = mockDeals.filter(d => d.stage !== 5 && d.stage !== 6);
     const won = mockDeals.filter(d => d.stage === 5);
@@ -180,169 +224,135 @@ export const CrmApi = {
 
     emitCqrs({
       type: 'QUERY',
+      source: 'demo',
       name: 'GetDashboardMetricsQuery',
       handler: 'GetDashboardMetricsQueryHandler',
-      layer: 'Aurum.Application',
       payload: {},
       result: { totalPipeline, totalWon, customers: mockCustomers.length },
-      durationMs: Math.round(performance.now() - start)
+      durationMs: elapsed(start)
     });
-
     return data;
   },
 
   async getCustomers(): Promise<Customer[]> {
     const start = performance.now();
-    try {
-      const res = await fetch(`${API_BASE_URL}/customers`, { signal: AbortSignal.timeout(1000) });
-      if (res.ok) {
-        const data = await res.json();
-        emitCqrs({
-          type: 'QUERY',
-          name: 'GetCustomersQuery',
-          handler: 'GetCustomersQueryHandler',
-          layer: 'Aurum.Application',
-          payload: {},
-          result: `${data.length} clientes recuperados vía .NET API`,
-          durationMs: Math.round(performance.now() - start)
-        });
-        return data;
-      }
-    } catch { }
+    const apiData = await request<Customer[]>('/customers');
+    const source: DataSource = apiData !== OFFLINE ? 'api' : 'demo';
+    const customers = apiData !== OFFLINE ? apiData : [...mockCustomers];
 
     emitCqrs({
       type: 'QUERY',
+      source,
       name: 'GetCustomersQuery',
       handler: 'GetCustomersQueryHandler',
-      layer: 'Aurum.Application',
       payload: {},
-      result: `${mockCustomers.length} clientes (Modo CQRS InMemory)`,
-      durationMs: Math.round(performance.now() - start)
+      result: `${customers.length} clientes recuperados`,
+      durationMs: elapsed(start)
     });
-    return [...mockCustomers];
+    return customers;
   },
 
   async createCustomer(data: { fullName: string; email: string; company: string; phone?: string; tier?: CustomerTier }): Promise<string> {
     const start = performance.now();
+    const apiData = await request<{ id: string }>('/customers', { method: 'POST', body: JSON.stringify(data) });
+    if (apiData !== OFFLINE) {
+      emitCqrs({
+        type: 'COMMAND',
+        source: 'api',
+        name: 'CreateCustomerCommand',
+        handler: 'CreateCustomerCommandHandler',
+        payload: data,
+        result: apiData,
+        durationMs: elapsed(start)
+      });
+      return apiData.id;
+    }
+
+    // Mismas reglas que la entidad Customer del dominio .NET
+    if (!data.fullName.trim()) throw new ApiError('El nombre del cliente no puede estar vacío.');
+    if (!data.email.includes('@')) throw new ApiError('Formato de email inválido.');
+
     const newId = 'cust-' + Math.random().toString(36).substring(2, 9);
-    const newCustomer: Customer = {
+    mockCustomers.unshift({
       id: newId,
-      fullName: data.fullName,
-      email: data.email,
-      company: data.company,
-      phone: data.phone || '',
+      fullName: data.fullName.trim(),
+      email: data.email.trim().toLowerCase(),
+      company: data.company.trim(),
+      phone: data.phone?.trim() || '',
       tier: data.tier || 1,
       createdAt: new Date().toISOString(),
       activeDealsCount: 0
-    };
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/customers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        signal: AbortSignal.timeout(1500)
-      });
-      if (res.ok) {
-        const json = await res.json();
-        emitCqrs({
-          type: 'COMMAND',
-          name: 'CreateCustomerCommand',
-          handler: 'CreateCustomerCommandHandler',
-          layer: 'Aurum.Application',
-          payload: data,
-          result: json,
-          durationMs: Math.round(performance.now() - start)
-        });
-        return json.id || newId;
-      }
-    } catch { }
-
-    mockCustomers.unshift(newCustomer);
+    });
     emitCqrs({
       type: 'COMMAND',
+      source: 'demo',
       name: 'CreateCustomerCommand',
       handler: 'CreateCustomerCommandHandler',
-      layer: 'Aurum.Application',
-      payload: { ...data, CommandId: newId },
-      result: { Status: 'Created', Entity: 'Customer', Id: newId },
-      durationMs: Math.round(performance.now() - start)
+      payload: data,
+      result: { id: newId },
+      durationMs: elapsed(start)
     });
     return newId;
   },
 
   async getDeals(): Promise<Deal[]> {
     const start = performance.now();
-    try {
-      const res = await fetch(`${API_BASE_URL}/deals`, { signal: AbortSignal.timeout(1000) });
-      if (res.ok) {
-        const data = await res.json();
-        emitCqrs({
-          type: 'QUERY',
-          name: 'GetDealsQuery',
-          handler: 'GetDealsQueryHandler',
-          layer: 'Aurum.Application',
-          payload: {},
-          result: `${data.length} deals en pipeline vía .NET`,
-          durationMs: Math.round(performance.now() - start)
-        });
-        return data;
-      }
-    } catch { }
+    const apiData = await request<Deal[]>('/deals');
+    const source: DataSource = apiData !== OFFLINE ? 'api' : 'demo';
+    const deals = apiData !== OFFLINE ? apiData : mockDeals.map(d => ({ ...d }));
 
     emitCqrs({
       type: 'QUERY',
+      source,
       name: 'GetDealsQuery',
       handler: 'GetDealsQueryHandler',
-      layer: 'Aurum.Application',
       payload: {},
-      result: `${mockDeals.length} deals en pipeline (CQRS Query)`,
-      durationMs: Math.round(performance.now() - start)
+      result: `${deals.length} oportunidades en el pipeline`,
+      durationMs: elapsed(start)
     });
-    return [...mockDeals];
+    return deals;
   },
 
-  async updateDealStage(dealId: string, newStage: DealStage): Promise<boolean> {
+  async updateDealStage(dealId: string, newStage: DealStage): Promise<void> {
     const start = performance.now();
-    try {
-      const res = await fetch(`${API_BASE_URL}/deals/${dealId}/stage`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newStage }),
-        signal: AbortSignal.timeout(1500)
+    const payload = { dealId, newStage, stageLabel: STAGE_LABELS[newStage] };
+    const apiData = await request<{ message: string }>(`/deals/${dealId}/stage`, {
+      method: 'PUT',
+      body: JSON.stringify({ newStage })
+    });
+    if (apiData !== OFFLINE) {
+      emitCqrs({
+        type: 'COMMAND',
+        source: 'api',
+        name: 'UpdateDealStageCommand',
+        handler: 'UpdateDealStageCommandHandler',
+        payload,
+        result: apiData,
+        durationMs: elapsed(start)
       });
-      if (res.ok) {
-        emitCqrs({
-          type: 'COMMAND',
-          name: 'UpdateDealStageCommand',
-          handler: 'UpdateDealStageCommandHandler',
-          layer: 'Aurum.Application',
-          payload: { dealId, newStage, stageLabel: STAGE_LABELS[newStage] },
-          result: { success: true },
-          durationMs: Math.round(performance.now() - start)
-        });
-        return true;
-      }
-    } catch { }
+      return;
+    }
 
+    // Mismas reglas que Deal.AdvanceStage del dominio .NET
     const deal = mockDeals.find(d => d.id === dealId);
-    if (deal) {
-      deal.stage = newStage;
-      deal.stageName = STAGE_LABELS[newStage];
-      if (newStage === 5 || newStage === 6) {
-        deal.closedAt = new Date().toISOString();
-      }
+    if (!deal) throw new ApiError('Oportunidad no encontrada.');
+    if (deal.stage === 5 || deal.stage === 6) throw new ApiError('La oportunidad ya está cerrada y no puede cambiar de fase.');
+    if (newStage !== 6 && newStage <= deal.stage) throw new ApiError('No se puede retroceder de fase.');
+
+    deal.stage = newStage;
+    deal.stageName = STAGE_LABELS[newStage];
+    if (newStage === 5 || newStage === 6) {
+      deal.closedAt = new Date().toISOString();
     }
 
     emitCqrs({
       type: 'COMMAND',
+      source: 'demo',
       name: 'UpdateDealStageCommand',
       handler: 'UpdateDealStageCommandHandler',
-      layer: 'Aurum.Application',
-      payload: { dealId, newStage: STAGE_LABELS[newStage] },
-      result: { Mutation: 'StateUpdated', Target: 'Aurum.Domain.Entities.Deal' },
-      durationMs: Math.round(performance.now() - start)
+      payload,
+      result: { stage: deal.stageName },
+      durationMs: elapsed(start)
     });
-    return true;
   }
 };

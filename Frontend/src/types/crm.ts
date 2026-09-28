@@ -44,10 +44,11 @@ export interface CqrsEventLog {
   id: string;
   timestamp: string;
   type: 'COMMAND' | 'QUERY';
+  source: 'api' | 'demo';
   name: string;
   handler: string;
-  layer: 'Aurum.Application' | 'Aurum.Domain' | 'Aurum.Infrastructure';
-  payload: any;
-  result: any;
+  layer: string;
+  payload: unknown;
+  result: unknown;
   durationMs: number;
 }

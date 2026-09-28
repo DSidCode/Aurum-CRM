@@ -1,10 +1,13 @@
 import React from 'react';
-import { ShieldCheck, Terminal, Users, Kanban, Sparkles, BookOpen } from 'lucide-react';
+import { ShieldCheck, Terminal, Users, Kanban, Sparkles } from 'lucide-react';
+import type { Tab } from '../App';
+import type { DataSource } from '../services/api';
 
 interface NavbarProps {
-  activeTab: 'pipeline' | 'customers' | 'inspector' | 'guide';
-  setActiveTab: (tab: 'pipeline' | 'customers' | 'inspector' | 'guide') => void;
+  activeTab: Tab;
+  setActiveTab: (tab: Tab) => void;
   cqrsLogCount: number;
+  dataSource: DataSource | null;
   onOpenNewCustomer: () => void;
 }
 
@@ -12,6 +15,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   cqrsLogCount,
+  dataSource,
   onOpenNewCustomer
 }) => {
   return (
@@ -28,7 +32,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                 CRM Enterprise
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-medium">.NET 10 Clean Architecture · React 19 CQRS Suite</p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-[11px] text-slate-400 font-medium">.NET 10 Clean Architecture · React 19 CQRS Suite</p>
+              {dataSource === 'api' && (
+                <span
+                  title="Los datos vienen de la API .NET (Clean Architecture + MediatR)"
+                  className="flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  API .NET conectada
+                </span>
+              )}
+              {dataSource === 'demo' && (
+                <span
+                  title="No hay servidor conectado: los Commands y Queries se simulan en el navegador con datos de ejemplo"
+                  className="flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  Modo demo · sin servidor
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -42,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Kanban className="w-4 h-4 flex-shrink-0" />
-            <span>Pipeline Comercial</span>
+            <span>Pipeline<span className="hidden sm:inline"> Comercial</span></span>
           </button>
 
           <button
@@ -54,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Users className="w-4 h-4 flex-shrink-0" />
-            <span>Directorio Clientes</span>
+            <span><span className="hidden sm:inline">Directorio </span>Clientes</span>
           </button>
 
           <button
@@ -66,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Terminal className="w-4 h-4 flex-shrink-0" />
-            <span>Auditor CQRS</span>
+            <span>Auditor<span className="hidden sm:inline"> CQRS</span></span>
             {cqrsLogCount > 0 && (
               <span className={`ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full font-mono ${
                 activeTab === 'inspector'
@@ -76,18 +100,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {cqrsLogCount}
               </span>
             )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('guide')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all cursor-pointer ${
-              activeTab === 'guide'
-                ? 'bg-gradient-to-r from-[#D4AF37] to-[#F59E0B] text-slate-950 shadow-md font-bold'
-                : 'text-slate-400 hover:text-amber-300 hover:bg-white/5'
-            }`}
-          >
-            <BookOpen className="w-4 h-4 flex-shrink-0" />
-            <span>Guía de Defensa</span>
           </button>
         </nav>
 

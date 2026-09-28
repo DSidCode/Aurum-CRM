@@ -1,4 +1,5 @@
 using Aurum.Domain.Enums;
+using Aurum.Domain.Exceptions;
 
 namespace Aurum.Domain.Entities;
 
@@ -20,9 +21,9 @@ public class Customer
     public Customer(string fullName, string email, string company, string phone = "", CustomerTier tier = CustomerTier.Standard)
     {
         if (string.IsNullOrWhiteSpace(fullName))
-            throw new ArgumentException("El nombre del cliente no puede estar vacío.");
+            throw new DomainException("El nombre del cliente no puede estar vacío.");
         if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
-            throw new ArgumentException("Formato de email inválido.");
+            throw new DomainException("Formato de email inválido.");
 
         Id = Guid.NewGuid();
         FullName = fullName.Trim();
@@ -35,8 +36,8 @@ public class Customer
 
     public void UpdateContactInfo(string fullName, string email, string company, string phone)
     {
-        if (string.IsNullOrWhiteSpace(fullName)) throw new ArgumentException("Nombre inválido.");
-        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@')) throw new ArgumentException("Email inválido.");
+        if (string.IsNullOrWhiteSpace(fullName)) throw new DomainException("Nombre inválido.");
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@')) throw new DomainException("Email inválido.");
 
         FullName = fullName.Trim();
         Email = email.Trim().ToLowerInvariant();

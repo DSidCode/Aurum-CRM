@@ -5,4 +5,8 @@
     <Project Path="src/Aurum.Domain/Aurum.Domain.csproj" />
     <Project Path="src/Aurum.Infrastructure/Aurum.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Aurum.Application.Tests/Aurum.Application.Tests.csproj" />
+    <Project Path="tests/Aurum.Domain.Tests/Aurum.Domain.Tests.csproj" />
+  </Folder>
 </Solution>
