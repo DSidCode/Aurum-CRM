@@ -6,9 +6,9 @@
 - Documentación principal generada: `README.md`, `GUIA_MAESTRA_ARQUITECTURA.md`, y `DEFENSA_ENTREVISTA_AURUM.md`.
 
 ## Tareas Agendadas (Próximos Pasos)
-- [ ] **Control de Versiones:** Inicializar el repositorio Git en la carpeta raíz (`git init`).
-- [ ] **Primer Commit:** Añadir los archivos base y realizar el commit inicial.
-- [ ] **GitHub:** Crear un repositorio en la cuenta de GitHub (perfil `garciadanielsid` / `DSidCode`), enlazarlo como origen remoto (`git remote add origin`) y subir el código (`git push`).
+- [x] **Control de Versiones:** Inicializar el repositorio Git en la carpeta raíz (`git init`).
+- [x] **Primer Commit:** Añadir los archivos base y realizar el commit inicial.
+- [x] **GitHub:** (subido a https://github.com/DSidCode/Aurum-CRM el 28-09-2026) Crear un repositorio en la cuenta de GitHub (perfil `garciadanielsid` / `DSidCode`), enlazarlo como origen remoto (`git remote add origin`) y subir el código (`git push`).
 
 ---
 *Nota: Este archivo sirve para retomar el hilo de desarrollo y no olvidar la integración pendiente con GitHub.*
