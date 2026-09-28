@@ -1,24 +1,31 @@
 # Registro de Cambios y Tareas Pendientes (Changelog / Agenda)
 
-## Estado Actual (25-09-2026)
-- Estructura base del proyecto inicializada.
-- Carpetas `Frontend/` (React + Vite) y `Backend/` preparadas.
-- Documentación principal generada: `README.md`, `GUIA_MAESTRA_ARQUITECTURA.md`, y `DEFENSA_ENTREVISTA_AURUM.md`.
+## Estado actual (28-09-2026) · Hilo cerrado
+Proyecto terminado como pieza de portafolio.
+- **Repositorio público:** https://github.com/DSidCode/Aurum-CRM (rama `main`).
+- **Portafolio:** ficha 09 en danisid.com con capturas y botón "Ver Código en GitHub". **Sin demo en vivo** (decisión: quien quiera verlo, va al repositorio).
+- **Material privado de estudio** (excluido de Git en `.gitignore`): `GUIA_MAESTRA_ARQUITECTURA.md`, `DEFENSA_ENTREVISTA_AURUM.md`, `AURUM_CRM_GUIA_VISUAL_MOVIL.pdf`.
 
 ## 28-09-2026 · Preparación para portafolio
-- Dominio: `Deal.AdvanceStage` valida transiciones (sin retrocesos ni cambios tras cerrar); `DomainException`; `Money` inmutable.
-- API: errores RFC 7807 (ProblemDetails) → 400 regla de negocio / 404 no encontrado.
-- Tests: 22 tests xUnit (`Aurum.Domain.Tests`, `Aurum.Application.Tests`).
-- Frontend: URL de API configurable (`VITE_API_URL`), indicador "Modo demo" honesto, errores de la API visibles, fix de hooks en el modal, pestaña de guía de entrevista eliminada, metadatos para compartir, pestañas compactas en móvil.
+- **Git/GitHub:** repositorio inicializado y publicado; `.gitignore` con `bin/`, `obj/`, `node_modules/`, `dist/` y el material privado.
+- **Dominio:** `Deal.AdvanceStage` valida transiciones (sin retrocesos ni cambios tras cerrar); `DomainException`; `Money` inmutable.
+- **API:** errores RFC 7807 (ProblemDetails) → 400 regla de negocio / 404 no encontrado. Swagger siempre visible (API de demostración).
+- **Tests:** 22 tests xUnit (`Aurum.Domain.Tests`, `Aurum.Application.Tests`) → `dotnet test Backend/AurumCRM.slnx`.
+- **Frontend:** URL de API configurable (`VITE_API_URL`, en desarrollo vía `.env.development`), indicador honesto "Modo demo · sin servidor" / "API .NET conectada", eventos del Auditor marcados como *API .NET* o *Simulado*, errores de la API visibles (ya no se finge éxito), fix de rules-of-hooks en el modal, pestaña "Guía de Defensa" eliminada, pie con enlaces a danisid.com y GitHub, metadatos para compartir, pestañas compactas en móvil.
+- **Limpieza:** `Class1.cs`, `App.css`, assets y README de plantilla eliminados.
+- **Capturas:** `docs/screenshots/` (6 imágenes, 1920×1080 + móvil), mostradas en el README. Copias en el portafolio: `proyecto_danisid.com/public/screenshots/aurum/`.
 
-## Próximos pasos
-- [x] Capturas finales en `docs/screenshots/` y en el README.
-- [x] Ficha del proyecto en danisid.com (capturas + enlace al repositorio). Decisión: sin demo en vivo; el portafolio enlaza al repositorio.
+## Pendientes (opcionales, si se retoma)
+- [ ] **Guía de entrevista, pregunta 4:** menciona FluentValidation y Pipeline Behaviors de MediatR, que **no existen** en el código. Implementarlos o ajustar la respuesta.
+- [ ] **Portafolio:** el icono de GitHub del pie de danisid.com apunta a `github.com/DaniSidCode`, pero Aurum está en `github.com/DSidCode`. Confirmar cuál es la cuenta correcta.
+- [ ] **Portafolio:** publicar en danisid.com los cambios de la ficha 09 (de momento solo están en local).
 
-## Tareas Agendadas (Próximos Pasos)
-- [x] **Control de Versiones:** Inicializar el repositorio Git en la carpeta raíz (`git init`).
-- [x] **Primer Commit:** Añadir los archivos base y realizar el commit inicial.
-- [x] **GitHub:** (subido a https://github.com/DSidCode/Aurum-CRM el 28-09-2026) Crear un repositorio en la cuenta de GitHub (perfil `garciadanielsid` / `DSidCode`), enlazarlo como origen remoto (`git remote add origin`) y subir el código (`git push`).
+## Cómo arrancarlo en local
+```bash
+cd Backend && dotnet run --project src/Aurum.Api     # API + Swagger en http://localhost:5000
+cd Frontend && npm run dev                           # App en http://localhost:5173 (o el siguiente puerto libre)
+```
 
----
-*Nota: Este archivo sirve para retomar el hilo de desarrollo y no olvidar la integración pendiente con GitHub.*
+## Historial
+- **25-09-2026:** estructura base (Frontend React + Vite, Backend .NET), README y guías de estudio.
+- **28-09-2026:** Git + GitHub, preparación para portafolio (ver arriba).
