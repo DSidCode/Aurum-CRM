@@ -1,0 +1,18 @@
+# Material de estudio personal (no público)
+GUIA_MAESTRA_ARQUITECTURA.md
+DEFENSA_ENTREVISTA_AURUM.md
+AURUM_CRM_GUIA_VISUAL_MOVIL.pdf
+
+# .NET
+bin/
+obj/
+.vs/
+*.user
+
+# Node
+node_modules/
+dist/
+
+# Editores / SO
+.idea/
+.DS_Store
