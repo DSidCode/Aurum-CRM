@@ -14,6 +14,20 @@
 
 ---
 
+## 📸 Capturas
+
+![Pipeline comercial con UI optimista](docs/screenshots/01-pipeline.png)
+
+| Auditor CQRS en vivo | Directorio de clientes |
+| :---: | :---: |
+| ![Auditor CQRS](docs/screenshots/04-auditor-cqrs.png) | ![Directorio de clientes](docs/screenshots/02-clientes.png) |
+| **Alta de cliente (`CreateCustomerCommand`)** | **API REST documentada con Swagger** |
+| ![Alta de cliente](docs/screenshots/03-nuevo-cliente.png) | ![Swagger](docs/screenshots/06-swagger-api.png) |
+
+<p align="center"><img src="docs/screenshots/05-movil.png" alt="Vista móvil" width="280"></p>
+
+---
+
 ## 🏗️ Estructura del Repositorio
 
 ```text

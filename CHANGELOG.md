@@ -12,8 +12,8 @@
 - Frontend: URL de API configurable (`VITE_API_URL`), indicador "Modo demo" honesto, errores de la API visibles, fix de hooks en el modal, pestaña de guía de entrevista eliminada, metadatos para compartir, pestañas compactas en móvil.
 
 ## Próximos pasos
-- [ ] Publicar demo en Netlify (`aurum.danisid.com`).
-- [ ] Capturas finales y tarjeta del proyecto en danisid.com.
+- [x] Capturas finales en `docs/screenshots/` y en el README.
+- [x] Ficha del proyecto en danisid.com (capturas + enlace al repositorio). Decisión: sin demo en vivo; el portafolio enlaza al repositorio.
 
 ## Tareas Agendadas (Próximos Pasos)
 - [x] **Control de Versiones:** Inicializar el repositorio Git en la carpeta raíz (`git init`).
